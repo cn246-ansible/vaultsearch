@@ -54,8 +54,7 @@ vaultfiles = []
 paths = [p for p in rootdir.glob('**/*') if p.is_file()]
 for path in paths:
     with open(path, 'r', errors='ignore') as f:
-        # if vault.is_encrypted(f.read()): # This is slower..
-        if '$ANSIBLE_VAULT' in f.readline():
+        if vault.is_encrypted(f.readline()):
             vaultfiles.append(path)
 
 
