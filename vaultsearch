@@ -36,8 +36,7 @@ ENDC = '\033[0m'
 # First argument is search term
 searchterm = sys.argv[1]
 
-
-# Second (optional) argument is path
+# Second (optional) argument is path to search
 rootdir = Path.cwd()
 if len(sys.argv) > 2:
     rootdir = Path(sys.argv[2])
@@ -55,7 +54,6 @@ vault = VaultLib(vault_secret)
 # Find vault files by parsing the first line of each file
 vaultfiles = []
 paths = [p for p in rootdir.glob('**/*') if p.is_file()]
-
 for path in paths:
     with open(path, 'r', errors='ignore') as f:
         # if vault.is_encrypted(f.read()): # This is slower..
@@ -67,11 +65,8 @@ for path in paths:
 for file in vaultfiles:
     data = vault.decrypt(open(file).read())
     data = data.decode("utf-8", errors='ignore').splitlines()
-
-    # Populate list with lines that contain the search term
     found = [x for x in data if re.search(searchterm, x)]
 
-    # Print results
     if found:
         print(f"{BOLD}{GREEN}{file}{ENDC}")
         for result in found:
