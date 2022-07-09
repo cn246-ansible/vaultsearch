@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+
+# Quickly "grep" ansible vault files.
+#
+# Recursively search current working directory:
+# vaultgrep "searchterm" .
+#
+# Use some regex for the search query:
+# vaultgrep "searchterm|anotherterm" /group_vars/all
+#
+# Recursively search specific directory:
+# vaultgrep "searchterm" host_vars/myhost
+#
+# Links:
+# https://stackoverflow.com/questions/44142208/how-to-view-decrypt-ansible-vault-credentials-files-from-within-a-python-script
+# https://github.com/ansible/ansible/blob/f8d2f0ac44f3e7a68277631bf4d464ed8b397832/lib/ansible/constants.py
+# https://github.com/ansible/ansible/blob/f8d2f0ac44f3e7a68277631bf4d464ed8b397832/lib/ansible/parsing/vault/__init__.py
+# https://github.com/ansible/ansible/blob/f8d2f0ac44f3e7a68277631bf4d464ed8b397832/lib/ansible/cli/__init__.py#L226
+# https://github.com/ansible/ansible/blob/f8d2f0ac44f3e7a68277631bf4d464ed8b397832/lib/ansible/parsing/dataloader.py
+
+import os
+import re
+import sys
+from ansible import constants as C
+from ansible.parsing.vault import VaultLib
+from ansible.cli import CLI
+from ansible.parsing.dataloader import DataLoader
+
+
+# Color and formatting
+GREEN = '\033[92m'
+BOLD = '\033[1m'
+ENDC = '\033[0m'
+
+
+# First argument is search term
+searchterm = sys.argv[1]
+
+
+# Second (optional) argument is path
+rootdir = os.getcwd()
+if len(sys.argv) > 2:
+    rootdir = sys.argv[2]
+
+
+# Vars for decrypting vault files using Ansible modules
+loader = DataLoader()
+vault_secret = CLI.setup_vault_secrets(
+    loader=loader,
+    vault_ids=C.DEFAULT_VAULT_IDENTITY_LIST
+    )
+vault = VaultLib(vault_secret)
+
+
+# Find vault files by parsing the first line of each file
+vaultfiles = []
+for folder, dirs, files in os.walk(rootdir):
+    for file in files:
+        fullpath = os.path.join(folder, file)
+        with open(fullpath, 'r', errors='ignore') as f:
+            # if vault.is_encrypted(f.read()): # This is slower..
+            if '$ANSIBLE_VAULT' in f.readline():
+                vaultfiles.append(fullpath)
+
+
+# grep for word in each vault file
+for file in vaultfiles:
+    data = vault.decrypt(open(file).read())
+    data = data.decode("utf-8", errors='ignore').splitlines()
+
+    # Populate list with lines that contain the search term
+    found = [x for x in data if re.search(searchterm, x)]
+
+    # Print results
+    if found:
+        print(f"{BOLD}{GREEN}{file}{ENDC}")
+        for result in found:
+            result = result.lstrip()
+            print(f"{result}")
+        print('\n')
+
+# vim: ft=python ts=4 sts=4 sw=4 sr et
