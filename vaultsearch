@@ -76,7 +76,7 @@ for file in vaultfiles:
         print(f"{BOLD}{GREEN}{file}{ENDC}")
         for result in found:
             result = result.lstrip()
-            print(f"{result}")
+            print(f"  {result}")
         print('\n')
 
 # vim: ft=python ts=4 sts=4 sw=4 sr et
