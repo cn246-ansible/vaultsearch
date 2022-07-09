@@ -27,7 +27,8 @@ from ansible.parsing.dataloader import DataLoader
 from pathlib import Path
 
 # Color and formatting
-GREEN = '\033[92m'
+BGRN = '\033[01;92m'
+BRED = '\033[01;31m'
 BOLD = '\033[1m'
 ENDC = '\033[0m'
 
@@ -63,8 +64,9 @@ for file in vaultfiles:
     found = [x for x in data if re.search(searchterm, x)]
 
     if found:
-        print(f"{BOLD}{GREEN}{file}{ENDC}")
+        print(f"{BGRN}{file}{ENDC}")
         for result in found:
+            result = result.replace(searchterm, BRED + searchterm + ENDC)
             result = result.lstrip()
             print(f"  {result}")
         print('\n')
