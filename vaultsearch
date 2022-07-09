@@ -34,6 +34,7 @@ ENDC = '\033[0m'
 
 # First argument is search term
 searchterm = sys.argv[1]
+rxsearch = re.compile(searchterm)
 
 # Second (optional) argument is path to search
 rootdir = Path.cwd()
@@ -57,18 +58,19 @@ for path in paths:
         if '$ANSIBLE_VAULT' in f.readline():
             vaultfiles.append(path)
 
-# grep for word in each vault file
+# search for word in each vault file
 for file in vaultfiles:
     data = vault.decrypt(open(file).read())
     data = data.decode("utf-8", errors='ignore').splitlines()
-    found = [x for x in data if re.search(searchterm, x)]
+    found = [x for x in data if rxsearch.search(x)]
 
     if found:
         print(f"{BGRN}{file}{ENDC}")
         for result in found:
-            result = result.replace(searchterm, BRED + searchterm + ENDC)
+            words = rxsearch.search(result)
+            result = rxsearch.sub(f"{BRED}{words[0]}{ENDC}", result)
             result = result.lstrip()
             print(f"  {result}")
-        print('\n')
+        print()
 
 # vim: ft=python ts=4 sts=4 sw=4 sr et
