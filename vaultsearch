@@ -26,12 +26,10 @@ from ansible.cli import CLI
 from ansible.parsing.dataloader import DataLoader
 from pathlib import Path
 
-
 # Color and formatting
 GREEN = '\033[92m'
 BOLD = '\033[1m'
 ENDC = '\033[0m'
-
 
 # First argument is search term
 searchterm = sys.argv[1]
@@ -41,7 +39,6 @@ rootdir = Path.cwd()
 if len(sys.argv) > 2:
     rootdir = Path(sys.argv[2])
 
-
 # Vars for decrypting vault files using Ansible modules
 loader = DataLoader()
 vault_secret = CLI.setup_vault_secrets(
@@ -49,7 +46,6 @@ vault_secret = CLI.setup_vault_secrets(
     vault_ids=C.DEFAULT_VAULT_IDENTITY_LIST
     )
 vault = VaultLib(vault_secret)
-
 
 # Find vault files by parsing the first line of each file
 vaultfiles = []
@@ -59,7 +55,6 @@ for path in paths:
         # if vault.is_encrypted(f.read()): # This is slower..
         if '$ANSIBLE_VAULT' in f.readline():
             vaultfiles.append(path)
-
 
 # grep for word in each vault file
 for file in vaultfiles:
