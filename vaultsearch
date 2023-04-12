@@ -44,7 +44,7 @@ else:
 # Vars for decrypting vault files using Ansible modules
 loader = DataLoader()
 id_list = C.DEFAULT_VAULT_IDENTITY_LIST
-vault_secret = CLI.setup_vault_secrets( loader=loader, vault_ids=id_list )
+vault_secret = CLI.setup_vault_secrets(loader=loader, vault_ids=id_list)
 vault = VaultLib(vault_secret)
 
 # Find vault files by parsing the first line of each file
