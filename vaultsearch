@@ -3,7 +3,7 @@
 # Quickly "grep" ansible vault files.
 #
 # Recursively search current working directory:
-# vaultgrep "searchterm" .
+# vaultgrep "searchterm"
 #
 # Use some regex for the search query:
 # vaultgrep "searchterm|anotherterm" /group_vars/all
