@@ -36,9 +36,10 @@ searchterm = sys.argv[1]
 rxsearch = re.compile(searchterm)
 
 # Second (optional) argument is path to search
-rootdir = Path.cwd()
 if len(sys.argv) > 2:
     rootdir = Path(sys.argv[2])
+else:
+    rootdir = Path.cwd()
 
 # Vars for decrypting vault files using Ansible modules
 loader = DataLoader()
