@@ -58,6 +58,15 @@ def is_vault(file_path):
 
 # Decrypt vault files
 def decrypt_vault(file_path):
+    """
+    Decrypts vault encrypted files.
+
+        Parameters:
+            file_path (str) - Path of file to decrypt
+
+        Returns:
+            decrypted (str) - List containing decrypted data
+    """
     data = vault.decrypt(open(file_path).read())
     data = data.decode("utf-8", errors='ignore').splitlines()
     return data
