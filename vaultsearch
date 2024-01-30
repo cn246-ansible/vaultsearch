@@ -52,8 +52,8 @@ def is_vault(file_path):
         Returns:
             bool: True if vault file
     """
-    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-        if '$ANSIBLE_VAULT' in f.readline():
+    with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+        if "$ANSIBLE_VAULT" in f.readline():
             return True
         return False
 
@@ -83,7 +83,7 @@ def decrypt_vault(file_path):
             file_path (str) - Path of file to decrypt
 
         Returns:
-            decrypted (str) - List containing decrypted data
+            decrypted (str) - Bulk decrypted data
     """
     with open(file_path, "r", encoding="utf-8") as f:
         decrypted = vault.decrypt(f.read())
