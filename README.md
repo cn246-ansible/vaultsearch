@@ -63,3 +63,12 @@ that I found from around the web.
 
 Any pull requests improving the code and/or performance are welcomed.
 
+----
+
+## Links
+- https://stackoverflow.com/questions/44142208/how-to-view-decrypt-ansible-vault-credentials-files-from-within-a-python-script
+- https://github.com/ansible/ansible/blob/f8d2f0ac44f3e7a68277631bf4d464ed8b397832/lib/ansible/constants.py
+- https://github.com/ansible/ansible/blob/f8d2f0ac44f3e7a68277631bf4d464ed8b397832/lib/ansible/parsing/vault/__init__.py
+- https://github.com/ansible/ansible/blob/f8d2f0ac44f3e7a68277631bf4d464ed8b397832/lib/ansible/cli/__init__.py#L226
+- https://github.com/ansible/ansible/blob/f8d2f0ac44f3e7a68277631bf4d464ed8b397832/lib/ansible/parsing/dataloader.py
+
