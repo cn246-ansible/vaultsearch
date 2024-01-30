@@ -42,7 +42,7 @@ vault_secret = CLI.setup_vault_secrets(loader=loader, vault_ids=id_list)
 vault = VaultLib(vault_secret)
 
 # Find vault files by parsing the first line of each file
-def isVault(fname):
+def is_vault(fname):
     with open(fname, 'r', errors='ignore') as f:
         if '$ANSIBLE_VAULT' in f.readline():
             return fname
@@ -54,7 +54,7 @@ def decrypt(fname):
     return data
 
 # Find vault files by parsing the first line of each file
-vaultfiles = [str(p) for p in rootdir.rglob('*') if p.is_file() if isVault(p)]
+vaultfiles = [str(p) for p in rootdir.rglob('*') if p.is_file() if is_vault(p)]
 
 # Search for word in each vault file
 for file in vaultfiles:
