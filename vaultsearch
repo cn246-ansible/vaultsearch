@@ -49,11 +49,12 @@ def is_vault(file_path):
             file_path (str): File path to search
 
         Returns:
-            file_path (str): fIle path of vault files
+            bool: True if vault file
     """
     with open(file_path, 'r', errors='ignore') as f:
         if '$ANSIBLE_VAULT' in f.readline():
-            return file_path
+            return True
+        return False
 
 # Decrypt vault files
 def decrypt(fname):
