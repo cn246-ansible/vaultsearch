@@ -11,14 +11,14 @@ vaultgrep "searchterm|anotherterm" /group_vars/all
 Recursively search specific directory:
 vaultgrep "searchterm" host_vars/myhost
 """
-
 import re
 import sys
+from pathlib import Path
+
 from ansible import constants as C
-from ansible.parsing.vault import VaultLib
 from ansible.cli import CLI
 from ansible.parsing.dataloader import DataLoader
-from pathlib import Path
+from ansible.parsing.vault import VaultLib
 
 # Color codes
 BGRN = '\033[01;92m'
