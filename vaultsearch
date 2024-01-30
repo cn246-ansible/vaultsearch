@@ -56,7 +56,7 @@ def is_vault(file_path):
             return True
         return False
 
-# Decrypt vault files
+
 def decrypt_vault(file_path):
     """
     Decrypts vault encrypted files.
@@ -67,9 +67,11 @@ def decrypt_vault(file_path):
         Returns:
             decrypted (str) - List containing decrypted data
     """
-    data = vault.decrypt(open(file_path).read())
-    data = data.decode("utf-8", errors='ignore').splitlines()
-    return data
+    with open(file_path, "r", encoding="utf-8") as f:
+        decrypted = vault.decrypt(f.read())
+        decrypted = decrypted.decode("utf-8", errors="ignore").splitlines()
+        return decrypted
+
 
 # Find vault files by parsing the first line of each file
 vaultfiles = [str(p) for p in rootdir.rglob('*') if p.is_file() if is_vault(p)]
