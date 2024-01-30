@@ -22,9 +22,9 @@ from ansible.parsing.dataloader import DataLoader
 from ansible.parsing.vault import VaultLib
 
 # Color codes
-BGRN = '\033[01;92m'
-BRED = '\033[01;31m'
-ENDC = '\033[0m'
+BGRN = "\033[01;92m"
+BRED = "\033[01;31m"
+ENDC = "\033[0m"
 
 # First argument is search term
 searchterm = sys.argv[1]
@@ -41,6 +41,7 @@ loader = DataLoader()
 id_list = C.DEFAULT_VAULT_IDENTITY_LIST
 vault_secret = CLI.setup_vault_secrets(loader=loader, vault_ids=id_list)
 vault = VaultLib(vault_secret)
+
 
 def is_vault(file_path):
     """
