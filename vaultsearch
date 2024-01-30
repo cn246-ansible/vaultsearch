@@ -41,11 +41,12 @@ id_list = C.DEFAULT_VAULT_IDENTITY_LIST
 vault_secret = CLI.setup_vault_secrets(loader=loader, vault_ids=id_list)
 vault = VaultLib(vault_secret)
 
+
 # Find vault files by parsing the first line of each file
-def is_vault(fname):
-    with open(fname, 'r', errors='ignore') as f:
+def is_vault(file_path):
+    with open(file_path, 'r', errors='ignore') as f:
         if '$ANSIBLE_VAULT' in f.readline():
-            return fname
+            return file_path
 
 # Decrypt vault files
 def decrypt(fname):
