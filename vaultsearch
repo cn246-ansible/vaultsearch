@@ -57,7 +57,7 @@ def is_vault(file_path):
         return False
 
 # Decrypt vault files
-def decrypt(file_path):
+def decrypt_vault(file_path):
     data = vault.decrypt(open(file_path).read())
     data = data.decode("utf-8", errors='ignore').splitlines()
     return data
@@ -67,7 +67,7 @@ vaultfiles = [str(p) for p in rootdir.rglob('*') if p.is_file() if is_vault(p)]
 
 # Search for word in each vault file
 for file in vaultfiles:
-    data = decrypt(file)
+    data = decrypt_vault(file)
     found = [x for x in data if rxsearch.search(x)]
 
     if found:
