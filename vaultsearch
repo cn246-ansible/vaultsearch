@@ -122,17 +122,31 @@ def search_line(contents):
     return result
 
 
+def main():
+    """
+    Recursively loops over files in the given directory looking for files where
+    the first line contains the string: $ANSIBLE_VAULT.
+    Decrypts the vault file and searches for the term against the bulk data.
+    If it finds the term, split lines and return the file name and the line(s)
+    with the search term highlighted
+
+        Prints:
+            Formatted lines matching search term
+    """
+    for file in find_files(rootdir):
+        data = decrypt_vault(file)
+        if search_bulk(data):
+            print(f"{BGRN}{file}{ENDC}")
+            line_match = {x for x in data.splitlines() if rxsearch.search(x)}
+            for line in line_match:
+                output = search_line(line)
+                print(f"  {output}")
+            print()
+
+
 if __name__ == "__main__":
     try:
-        for file in find_files(rootdir):
-            data = decrypt_vault(file)
-            if search_bulk(data):
-                print(f"{BGRN}{file}{ENDC}")
-                line_match = {x for x in data.splitlines() if rxsearch.search(x)}
-                for line in line_match:
-                    output = search_line(line)
-                    print(f"  {output}")
-                print()
+        main()
 
     except Exception as e:
         print(e)
