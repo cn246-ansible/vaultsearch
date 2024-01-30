@@ -91,17 +91,22 @@ def decrypt_vault(file_path):
         return decrypted
 
 
-for file in find_files(rootdir):
-    data = decrypt_vault(file)
-    found = [x for x in data if rxsearch.search(x)]
+if __name__ == "__main__":
+    try:
+        for file in find_files(rootdir):
+            data = decrypt_vault(file)
+            found = [x for x in data if rxsearch.search(x)]
 
-    if found:
-        print(f"{BGRN}{file}{ENDC}")
-        for result in found:
-            words = rxsearch.search(result)
-            result = rxsearch.sub(f"{BRED}{words[0]}{ENDC}", result)
-            result = result.lstrip()
-            print(f"  {result}")
-        print()
+            if found:
+                print(f"{BGRN}{file}{ENDC}")
+                for result in found:
+                    words = rxsearch.search(result)
+                    result = rxsearch.sub(f"{BRED}{words[0]}{ENDC}", result)
+                    result = result.lstrip()
+                    print(f"  {result}")
+                print()
+
+    except Exception as e:
+        print(e)
 
 # vim: ft=python ts=4 sts=4 sw=4 sr et
