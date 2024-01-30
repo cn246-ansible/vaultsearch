@@ -87,23 +87,51 @@ def decrypt_vault(file_path):
     """
     with open(file_path, "r", encoding="utf-8") as f:
         decrypted = vault.decrypt(f.read())
-        decrypted = decrypted.decode("utf-8", errors="ignore").splitlines()
+        decrypted = decrypted.decode("utf-8", errors="ignore")
         return decrypted
+
+
+def search_bulk(contents):
+    """
+    Bulk search all contents for regex search term
+
+        Parameters:
+            contents (str): Content to search
+
+        Returns:
+            True if search term found
+    """
+    if rxsearch.search(contents):
+        return True
+    return False
+
+
+def search_line(contents):
+    """
+    Search contents for search term and return the result.
+
+        Parameters:
+            contents (str): Content to search
+
+        Returns:
+            Matching result with search term colored red
+    """
+    match = rxsearch.search(contents)
+    result = rxsearch.sub(f"{BRED}{match[0]}{ENDC}", contents)
+    result = result.lstrip()
+    return result
 
 
 if __name__ == "__main__":
     try:
         for file in find_files(rootdir):
             data = decrypt_vault(file)
-            found = [x for x in data if rxsearch.search(x)]
-
-            if found:
+            if search_bulk(data):
                 print(f"{BGRN}{file}{ENDC}")
-                for result in found:
-                    words = rxsearch.search(result)
-                    result = rxsearch.sub(f"{BRED}{words[0]}{ENDC}", result)
-                    result = result.lstrip()
-                    print(f"  {result}")
+                line_match = {x for x in data.splitlines() if rxsearch.search(x)}
+                for line in line_match:
+                    output = search_line(line)
+                    print(f"  {output}")
                 print()
 
     except Exception as e:
