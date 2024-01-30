@@ -11,6 +11,7 @@ vaultgrep "searchterm|anotherterm" /group_vars/all
 Recursively search specific directory:
 vaultgrep "searchterm" host_vars/myhost
 """
+import os
 import re
 import sys
 from pathlib import Path
@@ -57,6 +58,23 @@ def is_vault(file_path):
         return False
 
 
+def find_files(search_path):
+    """
+    Recursively search for Ansible vault files in the provided path.
+
+        Parameters:
+            search_path (str): where to start searching for vault files
+
+        Yields:
+            p.path (str): path of all files in search_path
+    """
+    for p in os.scandir(search_path):
+        if (p.is_file() and p.stat().st_size > 0) and is_vault(p.path):
+            yield p.path
+        elif p.is_dir() and not p.name == ".git":
+            yield from find_files(p.path)
+
+
 def decrypt_vault(file_path):
     """
     Decrypts vault encrypted files.
@@ -73,11 +91,7 @@ def decrypt_vault(file_path):
         return decrypted
 
 
-# Find vault files by parsing the first line of each file
-vaultfiles = [str(p) for p in rootdir.rglob('*') if p.is_file() if is_vault(p)]
-
-# Search for word in each vault file
-for file in vaultfiles:
+for file in find_files(rootdir):
     data = decrypt_vault(file)
     found = [x for x in data if rxsearch.search(x)]
 
