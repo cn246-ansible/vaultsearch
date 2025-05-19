@@ -8,23 +8,30 @@
 """Quickly "grep" ansible vault files.
 
 Recursively search current working directory:
-vaultgrep "searchterm"
+  vaultgrep "searchterm"
 
-Use some regex for the search query:
-vaultgrep "searchterm|anotherterm" /group_vars/all
+Use regex for the search query:
+  vaultgrep "searchterm|anotherterm" /group_vars/all
 
 Recursively search specific directory:
-vaultgrep "searchterm" host_vars/myhost
+  vaultgrep "searchterm" host_vars/myhost
 """
 import os
 import re
 import sys
+from collections.abc import Iterator
 from pathlib import Path
 
-from ansible import constants as C
+from ansible import constants as c
 from ansible.cli import CLI
 from ansible.parsing.dataloader import DataLoader
 from ansible.parsing.vault import VaultLib
+
+# Vars for decrypting vault files using Ansible modules
+loader = DataLoader()
+id_list = c.DEFAULT_VAULT_IDENTITY_LIST
+vault_secret = CLI.setup_vault_secrets(loader=loader, vault_ids=id_list)
+vault = VaultLib(vault_secret)
 
 # Color codes
 BGRN = "\033[01;92m"
@@ -36,112 +43,82 @@ searchterm = sys.argv[1]
 rxsearch = re.compile(searchterm)
 
 # Second (optional) argument is path to search
-if len(sys.argv) > 2:
-    rootdir = Path(sys.argv[2])
-else:
-    rootdir = Path.cwd()
-
-# Vars for decrypting vault files using Ansible modules
-loader = DataLoader()
-id_list = C.DEFAULT_VAULT_IDENTITY_LIST
-vault_secret = CLI.setup_vault_secrets(loader=loader, vault_ids=id_list)
-vault = VaultLib(vault_secret)
+minarg = 2
+search_path = Path(sys.argv[2]) if len(sys.argv) > minarg else Path.cwd()
 
 
-def is_vault(file_path):
+def is_vault_file(file_path: str) -> bool:
+    """Check first line of file for the string '$ANSIBLE_VAULT'.
+
+    Parameters:
+        file_path: File path to search
+
+    Returns:
+        bool: True if vault file
     """
-    Check first line of file for the string '$ANSIBLE_VAULT'
-
-        Parameters:
-            file_path (str): File path to search
-
-        Returns:
-            bool: True if vault file
-    """
-    with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
-        if "$ANSIBLE_VAULT" in f.readline():
-            return True
-        return False
+    with Path(file_path).open("r", encoding="utf-8", errors="ignore") as f:
+        return "$ANSIBLE_VAULT" in f.readline()
 
 
-def find_files(search_path):
-    """
-    Recursively search for Ansible vault files in the provided path.
+def find_vault_files(search_path: str) -> Iterator:
+    """Recursively search for Ansible vault files in the provided path.
 
-        Parameters:
-            search_path (str): where to start searching for vault files
+    Parameters:
+        search_path (str): where to start searching for vault files
 
-        Yields:
-            p.path (str): path of all files in search_path
+    Yields:
+        p.path (str): path of all files in search_path
     """
     for p in os.scandir(search_path):
-        if (p.is_file() and p.stat().st_size > 0) and is_vault(p.path):
+        if (p.is_file() and p.stat().st_size > 0) and is_vault_file(p.path):
             yield p.path
-        elif p.is_dir() and not p.name == ".git":
-            yield from find_files(p.path)
+        elif p.is_dir() and p.name != ".git":
+            yield from find_vault_files(p.path)
 
 
-def decrypt_vault(file_path):
+def decrypt_vault_file(file_path: str) -> str:
+    """Decrypts vault encrypted files.
+
+    Parameters:
+        file_path (str) - Path of file to decrypt
+
+    Returns:
+        decrypted (str) - Bulk decrypted data
     """
-    Decrypts vault encrypted files.
-
-        Parameters:
-            file_path (str) - Path of file to decrypt
-
-        Returns:
-            decrypted (str) - Bulk decrypted data
-    """
-    with open(file_path, "r", encoding="utf-8") as f:
+    with Path(file_path).open("r", encoding="utf-8") as f:
         decrypted = vault.decrypt(f.read())
-        decrypted = decrypted.decode("utf-8", errors="ignore")
-        return decrypted
+        return decrypted.decode("utf-8", errors="ignore")
 
 
-def search_bulk(contents):
-    """
-    Bulk search all contents for regex search term
+def search_line(contents: str) -> str:
+    """Search contents for search term and return the result.
 
-        Parameters:
-            contents (str): Content to search
+    Parameters:
+        contents (str): Content to search
 
-        Returns:
-            True if search term found
-    """
-    if rxsearch.search(contents):
-        return True
-    return False
-
-
-def search_line(contents):
-    """
-    Search contents for search term and return the result.
-
-        Parameters:
-            contents (str): Content to search
-
-        Returns:
-            Matching result with search term colored red
+    Returns:
+        Matching result with search term colored red
     """
     match = rxsearch.search(contents)
     result = rxsearch.sub(f"{BRED}{match[0]}{ENDC}", contents)
-    result = result.lstrip()
-    return result
+    return result.lstrip()
 
 
-def main():
-    """
+def main() -> str:
+    """Combine the functions.
+
     Recursively loops over files in the given directory looking for files where
     the first line contains the string: $ANSIBLE_VAULT.
     Decrypts the vault file and searches for the term against the bulk data.
     If it finds the term, split lines and return the file name and the line(s)
     with the search term highlighted
 
-        Prints:
-            Formatted lines matching search term
+    Prints:
+        Formatted lines matching search term
     """
-    for file in find_files(rootdir):
-        data = decrypt_vault(file)
-        if search_bulk(data):
+    for file in find_vault_files(search_path):
+        data = decrypt_vault_file(file)
+        if rxsearch.search(data):
             print(f"{BGRN}{file}{ENDC}")
             line_match = {x for x in data.splitlines() if rxsearch.search(x)}
             for line in line_match:
@@ -151,10 +128,6 @@ def main():
 
 
 if __name__ == "__main__":
-    try:
-        main()
-
-    except Exception as e:
-        print(e)
+    main()
 
 # vim: ft=python ts=4 sts=4 sw=4 sr et
