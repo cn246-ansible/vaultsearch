@@ -118,10 +118,12 @@ def main() -> str | None:
         Formatted lines matching search term
     """
     for file in find_vault_files(search_start_path):
-        data = decrypt_vault_file(file)
-        if rxsearch.search(data):
+        decrypted_data: str = decrypt_vault_file(file)
+        if rxsearch.search(decrypted_data):
             print(f"{BGRN}{file}{ENDC}")
-            line_match = {x for x in data.splitlines() if rxsearch.search(x)}
+            line_match: set = {
+                x for x in decrypted_data.splitlines() if rxsearch.search(x)
+            }
             for line in line_match:
                 output = search_line(line)
                 print(f"  {output}")
