@@ -39,12 +39,12 @@ BRED = "\033[01;31m"
 ENDC = "\033[0m"
 
 # First argument is search term
-searchterm = sys.argv[1]
-rxsearch = re.compile(searchterm)
+searchterm: str = sys.argv[1]
+rxsearch: re.Pattern[str] = re.compile(searchterm)
 
 # Second (optional) argument is path to search
-minarg = 2
-search_path = Path(sys.argv[2]) if len(sys.argv) > minarg else Path.cwd()
+minarg: int = 2
+search_start_path: Path = Path(sys.argv[2]) if len(sys.argv) > minarg else Path.cwd()
 
 
 def is_vault_file(file_path: str) -> bool:
@@ -60,7 +60,7 @@ def is_vault_file(file_path: str) -> bool:
         return "$ANSIBLE_VAULT" in f.readline()
 
 
-def find_vault_files(search_path: str) -> Iterator:
+def find_vault_files(search_path: Path) -> Iterator:
     """Recursively search for Ansible vault files in the provided path.
 
     Parameters:
@@ -90,7 +90,7 @@ def decrypt_vault_file(file_path: str) -> str:
         return decrypted.decode("utf-8", errors="ignore")
 
 
-def search_line(contents: str) -> str:
+def search_line(contents: str) -> str | None:
     """Search contents for search term and return the result.
 
     Parameters:
@@ -99,12 +99,13 @@ def search_line(contents: str) -> str:
     Returns:
         Matching result with search term colored red
     """
-    match = rxsearch.search(contents)
-    result = rxsearch.sub(f"{BRED}{match[0]}{ENDC}", contents)
-    return result.lstrip()
+    match: re.Match[str] | None = rxsearch.search(contents)
+    if match:
+        return rxsearch.sub(f"{BRED}{match[0]}{ENDC}", contents).lstrip()
+    return None
 
 
-def main() -> str:
+def main() -> str | None:
     """Combine the functions.
 
     Recursively loops over files in the given directory looking for files where
@@ -116,7 +117,7 @@ def main() -> str:
     Prints:
         Formatted lines matching search term
     """
-    for file in find_vault_files(search_path):
+    for file in find_vault_files(search_start_path):
         data = decrypt_vault_file(file)
         if rxsearch.search(data):
             print(f"{BGRN}{file}{ENDC}")
