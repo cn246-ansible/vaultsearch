@@ -24,14 +24,9 @@ from pathlib import Path
 
 from ansible import constants as c
 from ansible.cli import CLI
+from ansible.errors import AnsibleError
 from ansible.parsing.dataloader import DataLoader
 from ansible.parsing.vault import VaultLib
-
-# Vars for decrypting vault files using Ansible modules
-loader = DataLoader()
-id_list = c.DEFAULT_VAULT_IDENTITY_LIST
-vault_secret = CLI.setup_vault_secrets(loader=loader, vault_ids=id_list)
-vault = VaultLib(vault_secret)
 
 # Color codes
 BGRN = "\033[01;92m"
@@ -45,7 +40,6 @@ rxsearch: re.Pattern[str] = re.compile(searchterm)
 # Second (optional) argument is path to search
 minarg: int = 2
 search_start_path: Path = Path(sys.argv[2]) if len(sys.argv) > minarg else Path.cwd()
-
 
 def is_vault_file(file_path: str) -> bool:
     """Check first line of file for the string '$ANSIBLE_VAULT'.
@@ -76,7 +70,7 @@ def find_vault_files(search_path: Path) -> Iterator:
             yield from find_vault_files(p.path)
 
 
-def decrypt_vault_file(file_path: str) -> str:
+def decrypt_vault_file(file_path: str, vault: VaultLib) -> str:
     """Decrypts vault encrypted files.
 
     Parameters:
@@ -85,9 +79,16 @@ def decrypt_vault_file(file_path: str) -> str:
     Returns:
         decrypted (str) - Bulk decrypted data
     """
-    with Path(file_path).open("r", encoding="utf-8") as f:
-        decrypted = vault.decrypt(f.read())
-        return decrypted.decode("utf-8", errors="ignore")
+    try:
+        with Path(file_path).open("r", encoding="utf-8") as f:
+            decrypted = vault.decrypt(f.read())
+            return decrypted.decode("utf-8", errors="ignore")
+    except AnsibleError as e:
+        print(f"{BYEL}Warning: Cannot decrypt {file_path}: {e}{ENDC}", file=sys.stderr)
+        return None
+    except (OSError, PermissionError) as e:
+        print(f"{BYEL}Warning: Cannot read {file_path}: {e}{ENDC}", file=sys.stderr)
+        return None
 
 
 def search_line(contents: str) -> str | None:
@@ -117,8 +118,19 @@ def main() -> str | None:
     Prints:
         Formatted lines matching search term
     """
+    # Initialize Ansible vault
+    loader = DataLoader()
+    id_list = c.DEFAULT_VAULT_IDENTITY_LIST
+    try:
+        vault_secret = CLI.setup_vault_secrets(loader=loader, vault_ids=id_list)
+    except AnsibleError as e:
+        print(f"{BRED}Error: Failed to setup vault secrets: {e}{ENDC}", file=sys.stderr)
+        sys.exit(1)
+
+    vault = VaultLib(vault_secret)
+
     for file in find_vault_files(search_start_path):
-        decrypted_data: str = decrypt_vault_file(file)
+        decrypted_data: str = decrypt_vault_file(file, vault)
         if rxsearch.search(decrypted_data):
             print(f"{BGRN}{file}{ENDC}")
             line_match: set = {
