@@ -31,15 +31,41 @@ from ansible.parsing.vault import VaultLib
 # Color codes
 BGRN = "\033[01;92m"
 BRED = "\033[01;31m"
+BYEL = "\033[01;33m"
 ENDC = "\033[0m"
 
-# First argument is search term
-searchterm: str = sys.argv[1]
-rxsearch: re.Pattern[str] = re.compile(searchterm)
 
-# Second (optional) argument is path to search
-minarg: int = 2
-search_start_path: Path = Path(sys.argv[2]) if len(sys.argv) > minarg else Path.cwd()
+def parse_arguments() -> tuple[re.Pattern[str], Path]:
+    """Parse and validate command line arguments.
+
+    Returns:
+        tuple: Compiled regex pattern and search start path
+
+    Raises:
+        SystemExit: If arguments are invalid
+    """
+    if len(sys.argv) < 2:
+        print(f"{BRED}Error: Search term required!{ENDC}", file=sys.stderr)
+        print()
+        print(__doc__)
+        sys.exit(1)
+
+    searchterm: str = sys.argv[1]
+    try:
+        rxsearch: re.Pattern[str] = re.compile(searchterm)
+    except re.error as e:
+        print(f"{BRED}Error: Invalid regex pattern: {e}{ENDC}", file=sys.stderr)
+        sys.exit(1)
+
+    minarg: int = 2
+    search_start_path: Path = Path(sys.argv[2]) if len(sys.argv) > minarg else Path.cwd()
+
+    if not search_start_path.exists():
+        print(f"{BRED}Error: Path does not exist: {search_start_path}{ENDC}", file=sys.stderr)
+        sys.exit(1)
+
+    return rxsearch, search_start_path
+
 
 def is_vault_file(file_path: str) -> bool:
     """Check first line of file for the string '$ANSIBLE_VAULT'.
@@ -91,19 +117,17 @@ def decrypt_vault_file(file_path: str, vault: VaultLib) -> str:
         return None
 
 
-def search_line(contents: str) -> str | None:
-    """Search contents for search term and return the result.
+def highlight_matches(line: str, pattern: re.Pattern[str]) -> str:
+    """Highlight all regex matches in a line with color.
 
     Parameters:
-        contents (str): Content to search
+        line: Line to search and highlight
+        pattern: Compiled regex pattern
 
     Returns:
-        Matching result with search term colored red
+        Line with matches highlighted in red
     """
-    match: re.Match[str] | None = rxsearch.search(contents)
-    if match:
-        return rxsearch.sub(f"{BRED}{match[0]}{ENDC}", contents).lstrip()
-    return None
+    return pattern.sub(lambda m: f"{BRED}{m[0]}{ENDC}", line).lstrip()
 
 
 def main() -> str | None:
@@ -118,6 +142,8 @@ def main() -> str | None:
     Prints:
         Formatted lines matching search term
     """
+    rxsearch, search_start_path = parse_arguments()
+
     # Initialize Ansible vault
     loader = DataLoader()
     id_list = c.DEFAULT_VAULT_IDENTITY_LIST
@@ -129,17 +155,26 @@ def main() -> str | None:
 
     vault = VaultLib(vault_secret)
 
+    found_any = False
+
     for file in find_vault_files(search_start_path):
-        decrypted_data: str = decrypt_vault_file(file, vault)
+        decrypted_data = decrypt_vault_file(file, vault)
+        if decrypted_data is None:
+            continue
+
         if rxsearch.search(decrypted_data):
+            found_any = True
             print(f"{BGRN}{file}{ENDC}")
-            line_match: set = {
-                x for x in decrypted_data.splitlines() if rxsearch.search(x)
-            }
-            for line in line_match:
-                output = search_line(line)
-                print(f"  {output}")
+
+            matching_lines = {line for line in decrypted_data.splitlines() if rxsearch.search(line)}
+
+            for line in matching_lines:
+                highlighted = highlight_matches(line, rxsearch)
+                print(f"  {highlighted}")
             print()
+
+    if not found_any:
+        print(f"No matches found for pattern: {rxsearch.pattern}")
 
 
 if __name__ == "__main__":
