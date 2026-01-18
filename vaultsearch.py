@@ -1,7 +1,7 @@
 #!/usr/bin/env -S uv run --quiet --script
 # /// script
 # dependencies = [
-#     "ansible",
+#     "ansible-core>=2.15,<2.20",
 # ]
 # ///
 # ruff: noqa: T201
