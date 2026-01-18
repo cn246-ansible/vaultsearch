@@ -70,11 +70,11 @@ def parse_arguments() -> tuple[re.Pattern[str], Path]:
 def is_vault_file(file_path: str) -> bool:
     """Check first line of file for the string '$ANSIBLE_VAULT'.
 
-    Parameters:
+    Args:
         file_path: File path to search
 
     Returns:
-        bool: True if vault file
+        True if vault file, False otherwise
     """
     try:
         with Path(file_path).open("rb") as f:
@@ -85,14 +85,14 @@ def is_vault_file(file_path: str) -> bool:
         return False
 
 
-def find_vault_files(search_path: Path) -> Iterator:
+def find_vault_files(search_path: Path) -> Iterator[str]:
     """Recursively search for Ansible vault files in the provided path.
 
-    Parameters:
-        search_path (str): where to start searching for vault files
+    Args:
+        search_path: Where to start searching for vault files
 
     Yields:
-        p.path (str): path of all files in search_path
+        Path of all vault files in search_path
     """
     try:
         for p in os.scandir(search_path):
@@ -109,14 +109,15 @@ def find_vault_files(search_path: Path) -> Iterator:
         print(f"{BYEL}Warning: Cannot scan directory {search_path}: {e}{ENDC}", file=sys.stderr)
 
 
-def decrypt_vault_file(file_path: str, vault: VaultLib) -> str:
-    """Decrypts vault encrypted files.
+def decrypt_vault_file(file_path: str, vault: VaultLib) -> str | None:
+    """Decrypt vault encrypted files.
 
-    Parameters:
-        file_path (str) - Path of file to decrypt
+    Args:
+        file_path: Path of file to decrypt
+        vault: VaultLib instance for decryption
 
     Returns:
-        decrypted (str) - Bulk decrypted data
+        Decrypted data as string, or None if decryption fails
     """
     try:
         with Path(file_path).open("r", encoding="utf-8") as f:
@@ -133,7 +134,7 @@ def decrypt_vault_file(file_path: str, vault: VaultLib) -> str:
 def highlight_matches(line: str, pattern: re.Pattern[str]) -> str:
     """Highlight all regex matches in a line with color.
 
-    Parameters:
+    Args:
         line: Line to search and highlight
         pattern: Compiled regex pattern
 
@@ -143,17 +144,14 @@ def highlight_matches(line: str, pattern: re.Pattern[str]) -> str:
     return pattern.sub(lambda m: f"{BRED}{m[0]}{ENDC}", line).lstrip()
 
 
-def main() -> str | None:
-    """Combine the functions.
+def main() -> None:
+    """Search vault files for pattern and display results.
 
     Recursively loops over files in the given directory looking for files where
     the first line contains the string: $ANSIBLE_VAULT.
     Decrypts the vault file and searches for the term against the bulk data.
     If it finds the term, split lines and return the file name and the line(s)
-    with the search term highlighted
-
-    Prints:
-        Formatted lines matching search term
+    with the search term highlighted.
     """
     rxsearch, search_start_path = parse_arguments()
 
