@@ -76,8 +76,13 @@ def is_vault_file(file_path: str) -> bool:
     Returns:
         bool: True if vault file
     """
-    with Path(file_path).open("r", encoding="utf-8", errors="ignore") as f:
-        return "$ANSIBLE_VAULT" in f.readline()
+    try:
+        with Path(file_path).open("rb") as f:
+            first_line = f.readline()
+            return b"$ANSIBLE_VAULT" in first_line
+    except (OSError, PermissionError) as e:
+        print(f"{BYEL}Warning: Cannot read {file_path}: {e}{ENDC}", file=sys.stderr)
+        return False
 
 
 def find_vault_files(search_path: Path) -> Iterator:
