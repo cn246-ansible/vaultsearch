@@ -94,11 +94,19 @@ def find_vault_files(search_path: Path) -> Iterator:
     Yields:
         p.path (str): path of all files in search_path
     """
-    for p in os.scandir(search_path):
-        if (p.is_file() and p.stat().st_size > 0) and is_vault_file(p.path):
-            yield p.path
-        elif p.is_dir() and p.name != ".git":
-            yield from find_vault_files(p.path)
+    try:
+        for p in os.scandir(search_path):
+            try:
+                if p.is_file(follow_symlinks=False) and p.stat().st_size > 0:
+                    if is_vault_file(p.path):
+                        yield p.path
+                elif p.is_dir(follow_symlinks=False) and p.name != ".git":
+                    yield from find_vault_files(Path(p.path))
+            except (OSError, PermissionError) as e:
+                print(f"{BYEL}Warning: Cannot access {p.path}: {e}{ENDC}", file=sys.stderr)
+                continue
+    except (OSError, PermissionError) as e:
+        print(f"{BYEL}Warning: Cannot scan directory {search_path}: {e}{ENDC}", file=sys.stderr)
 
 
 def decrypt_vault_file(file_path: str, vault: VaultLib) -> str:
